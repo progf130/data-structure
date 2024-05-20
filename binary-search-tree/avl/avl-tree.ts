@@ -59,8 +59,58 @@ export class AvlTree<T> {
     }
 
     toNode.updateHeight();
+    return this.getBalancedRootOfSubtree(toNode);
+  }
 
-    return toNode;
+  private getBalancedRootOfSubtree(node: Node<T>): Node<T> {
+    const balanceFactor = this.getBalanceFactor(node);
+    if (balanceFactor > 1) {
+      const left = node.left as Node<T>;
+      if (this.getBalanceFactor(left) >= 0){
+        //make rightRotation
+      } else {
+        //make leftRotation(node.left)
+        //make rightRotation(node)
+      }
+    }
+    if (balanceFactor < 1) {
+      //make leftRotation
+    }
+    return node;
+  }
+
+  private getBalanceFactor(node: Node<T>): number {
+    const leftHeight = node.left?.getHeight() ?? 0;
+    const rightHeight = node.right?.getHeight() ?? 0;
+    return leftHeight - rightHeight;
+  }
+
+  /**
+   * Used to rotate subtree to the left, returns root node of new subtree
+   * @param node
+   * @private
+   */
+  private rotateToLeft(node: Node<T>): Node<T> {
+    const nodeRight = node.right as Node<T>;
+    node.right = nodeRight.left ?? null;
+    nodeRight.left = node;
+    node.updateHeight();
+    nodeRight.updateHeight();
+    return nodeRight;
+  }
+
+  /**
+   * Used to rotate subtree to the right, returns root node of new subtree
+   * @param node
+   * @private
+   */
+  private rotateToRight(node: Node<T>): Node<T> {
+    const nodeLeft = node.left as Node<T>;
+    node.left = nodeLeft.right ?? null;
+    nodeLeft.right = node;
+    node.updateHeight();
+    nodeLeft.updateHeight();
+    return nodeLeft;
   }
 
   public traverseDFS(traverseFn: TraverseFn<T>, type?: DFS_TYPES): void {

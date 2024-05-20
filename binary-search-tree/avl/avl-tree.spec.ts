@@ -22,6 +22,15 @@ describe('Creating', () => {
       tree.traverseBFS(traverseFn);
       expect(accumulator).toEqual(factory.balancedArray.join(''));
     });
+
+    it('should traverse dfs in sorted order', () => {
+      let accumulator = '';
+      const traverseFn = (val: number) => accumulator += val;
+      const tree = factory.creatBalanced();
+      tree.traverseDFS(traverseFn);
+      expect(accumulator).toEqual(factory.balancedArray.sort().join(''));
+    });
+
   });
 
 
