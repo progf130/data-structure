@@ -66,15 +66,21 @@ export class AvlTree<T> {
     const balanceFactor = this.getBalanceFactor(node);
     if (balanceFactor > 1) {
       const left = node.left as Node<T>;
-      if (this.getBalanceFactor(left) >= 0){
-        //make rightRotation
+      if (this.getBalanceFactor(left) >= 0) {
+        return this.rotateToRight(node);
       } else {
-        //make leftRotation(node.left)
-        //make rightRotation(node)
+        node.left = this.rotateToLeft(left);
+        return this.rotateToRight(node);
       }
     }
-    if (balanceFactor < 1) {
-      //make leftRotation
+    if (balanceFactor < -1) {
+      const right = node.right as Node<T>;
+      if (this.getBalanceFactor(right) <= 0) {
+        return this.rotateToLeft(node);
+      } else {
+        node.right = this.rotateToRight(right);
+        return this.rotateToLeft(node);
+      }
     }
     return node;
   }
