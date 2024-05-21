@@ -37,13 +37,13 @@ export class AvlTree<T> {
     this.options = {...DEFAULT_OPTIONS, ...options};
   }
 
-  public insert(values: T | T[]) {
+  public insertRecursive(values: T | T[]) {
     const _values = Array.isArray(values) ? values : [values];
 
-    _values.forEach(value => this.root = this.insertValue(value, this.root));
+    _values.forEach(value => this.root = this.insertValueRecursive(value, this.root));
   }
 
-  private insertValue(value: T, toNode: Node<T> | null): Node<T> {
+  private insertValueRecursive(value: T, toNode: Node<T> | null): Node<T> {
 
     if (!toNode) {
       return new Node(value);
@@ -53,13 +53,50 @@ export class AvlTree<T> {
     if (this.options.ignoreDuplicates && compareResult === 0) {
       return toNode;
     } else if (compareResult < 0) {
-      toNode.left = this.insertValue(value, toNode.left);
+      toNode.left = this.insertValueRecursive(value, toNode.left);
     } else {
-      toNode.right = this.insertValue(value, toNode.right);
+      toNode.right = this.insertValueRecursive(value, toNode.right);
     }
 
     toNode.updateHeight();
     return this.getBalancedRootOfSubtree(toNode);
+  }
+
+  public insertUsingStack(values: T | T[]) {
+    const _values = Array.isArray(values) ? values : [values];
+
+    _values.forEach(value => this.insertValueUsingStack(value));
+  }
+
+  private insertValueUsingStack(value: T): void {
+
+    if (!this.root) {
+      this.root = new Node(value);
+      return;
+    }
+
+    const stack: { direction: 'left' | 'right', node: Node<T> }[] = [];
+    let curNode: Node<T> | null = this.root;
+    while (curNode) {
+      const compareResult = this.compareFn(value, curNode.value);
+      if (this.options.ignoreDuplicates && compareResult === 0) {
+        return;
+      } else if (compareResult < 0) {
+        stack.push({direction: 'left', node: curNode});
+        curNode = curNode.left;
+      } else {
+        stack.push({direction: 'right', node: curNode});
+        curNode = curNode.right;
+      }
+    }
+
+    let newNode = new Node(value);
+    while (stack.length) {
+      const {node, direction} = stack.pop() as { direction: 'left' | 'right', node: Node<T> };
+      node[direction] = newNode;
+      node.updateHeight();
+      newNode = this.getBalancedRootOfSubtree(node);
+    }
   }
 
   private getBalancedRootOfSubtree(node: Node<T>): Node<T> {
