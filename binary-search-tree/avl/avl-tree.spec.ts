@@ -2,8 +2,14 @@ import {AvlTree} from './avl-tree';
 
 
 const factory = {
+  getTraverseFn: (accumulator: { value: string }) => {
+    accumulator.value = '';
+    return (value: number) => accumulator.value += value;
+  },
   compareFn: (val: number, nodeVal: number) => val - nodeVal,
   balancedArray: [4, 2, 6, 1, 3, 5, 7],
+  sortedUpArray: [1, 2, 3, 4, 5, 6, 7],
+  sortedDownArray: [7, 6, 5, 4, 3, 2, 1],
   rotateToRight: [4, 2, 5, 1, 3, 0],
   balancedAfterRTR: [2, 1, 4, 0, 3, 5],
   rotateToLeftRight: [4, 1, 5, 0, 2, 3],
@@ -12,44 +18,43 @@ const factory = {
   balancedAfterRTL: [7, 5, 8, 4, 6, 9],
   rotateToRightLeft: [5, 4, 8, 7, 9, 6],
   balancedAfterRTRL: [7, 5, 8, 4, 6, 9],
-  insert: (tree: AvlTree<number>, values: number[], recursive: boolean) => {
-    if (recursive) {
-      tree.insertRecursive(values);
-    } else {
-      tree.insertUsingStack(values);
-    }
-  },
-  createBalanced: (recursive = true) => {
-    const tree = new AvlTree(factory.compareFn);
-    factory.insert(tree, factory.balancedArray, recursive);
+
+  create: (values: number[], useStackInsteadRecursion = false) => {
+    const tree = new AvlTree(factory.compareFn, {useStackInsteadRecursion});
+    tree.insert(values);
     return tree;
   },
-  createRotateToRight: (recursive = true) => {
-    const tree = new AvlTree(factory.compareFn);
+  createBalanced: (useStackInsteadRecursion = false) => {
+    const tree = new AvlTree(factory.compareFn, {useStackInsteadRecursion});
+    tree.insert(factory.balancedArray);
+    return tree;
+  },
+  createRotateToRight: (useStackInsteadRecursion = false) => {
+    const tree = new AvlTree(factory.compareFn, {useStackInsteadRecursion});
     const treeInitialNodes = [...factory.rotateToRight];
     const newNode = treeInitialNodes.pop() as number;
-    factory.insert(tree, treeInitialNodes, recursive);
+    tree.insert(treeInitialNodes);
     return {tree, treeInitialNodes, newNode};
   },
-  createRotateToLeftRight: (recursive = true) => {
-    const tree = new AvlTree(factory.compareFn);
+  createRotateToLeftRight: (useStackInsteadRecursion = false) => {
+    const tree = new AvlTree(factory.compareFn, {useStackInsteadRecursion});
     const treeInitialNodes = [...factory.rotateToLeftRight];
     const newNode = treeInitialNodes.pop() as number;
-    factory.insert(tree, treeInitialNodes, recursive);
+    tree.insert(treeInitialNodes);
     return {tree, treeInitialNodes, newNode};
   },
-  createRotateToLeft: (recursive = true) => {
-    const tree = new AvlTree(factory.compareFn);
+  createRotateToLeft: (useStackInsteadRecursion = false) => {
+    const tree = new AvlTree(factory.compareFn, {useStackInsteadRecursion});
     const treeInitialNodes = [...factory.rotateToLeft];
     const newNode = treeInitialNodes.pop() as number;
-    factory.insert(tree, treeInitialNodes, recursive);
+    tree.insert(treeInitialNodes);
     return {tree, treeInitialNodes, newNode};
   },
-  createRotateToRightLeft: (recursive = true) => {
-    const tree = new AvlTree(factory.compareFn);
+  createRotateToRightLeft: (useStackInsteadRecursion = false) => {
+    const tree = new AvlTree(factory.compareFn, {useStackInsteadRecursion});
     const treeInitialNodes = [...factory.rotateToRightLeft];
     const newNode = treeInitialNodes.pop() as number;
-    factory.insert(tree, treeInitialNodes, recursive);
+    tree.insert(treeInitialNodes);
     return {tree, treeInitialNodes, newNode};
   },
 };
@@ -69,7 +74,7 @@ describe('Creating', () => {
       expect(accumulator).toEqual(factory.balancedArray.join(''));
 
       accumulator = '';
-      const stackTree = factory.createBalanced(false);
+      const stackTree = factory.createBalanced(true);
       stackTree.traverseBFS(traverseFn);
       expect(accumulator).toEqual(factory.balancedArray.join(''));
     });
@@ -79,17 +84,43 @@ describe('Creating', () => {
       accumulator = '';
       const tree = factory.createBalanced();
       tree.traverseDFS(traverseFn);
-      expect(accumulator).toEqual(factory.balancedArray.sort().join(''));
+      expect(accumulator).toEqual(factory.sortedUpArray.join(''));
 
-      // accumulator = '';
-      // const stackTree = factory.createBalanced(false);
-      // stackTree.traverseDFS(traverseFn);
-      // expect(accumulator).toEqual(factory.balancedArray.sort().join(''));
+      accumulator = '';
+      const stackTree = factory.createBalanced(true);
+      stackTree.traverseDFS(traverseFn);
+      expect(accumulator).toEqual(factory.sortedUpArray.join(''));
     });
 
   });
 
   describe('unbalanced tree', () => {
+
+    it('from sorted array should creating correct tree', () => {
+
+      let accumulator = {value: ''};
+
+      console.log(factory.create([2,1,3], true));
+      console.log(factory.create([1,2,3], true));
+
+      factory.create(factory.sortedUpArray)
+        .traverseBFS(factory.getTraverseFn(accumulator));
+      expect(accumulator.value).toEqual(factory.balancedArray.join(''));
+
+      factory.create(factory.sortedUpArray, true)
+        .traverseBFS(factory.getTraverseFn(accumulator));
+      expect(accumulator.value).toEqual(factory.balancedArray.join(''));
+
+      factory.create(factory.sortedDownArray)
+        .traverseBFS(factory.getTraverseFn(accumulator));
+      expect(accumulator.value).toEqual(factory.balancedArray.join(''));
+
+      factory.create(factory.sortedDownArray, true)
+        .traverseBFS(factory.getTraverseFn(accumulator));
+      expect(accumulator.value).toEqual(factory.balancedArray.join(''));
+
+    });
+
 
     describe('when left subtree is longer', () => {
 
@@ -101,20 +132,21 @@ describe('Creating', () => {
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
-        tree.traverseBFS(traverseFn);
+        const {tree: stackTree} = factory.createRotateToRight(true);
+        stackTree.insert(newNode);
+        stackTree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTR.join(''));
       });
 
       it('and left\'s left subtree is longer - tree must rotate to right (stack insert)', () => {
 
         accumulator = '';
-        const {tree, treeInitialNodes, newNode} = factory.createRotateToRight(false);
+        const {tree, treeInitialNodes, newNode} = factory.createRotateToRight(true);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
+        tree.insert(newNode);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTR.join(''));
       });
@@ -127,7 +159,7 @@ describe('Creating', () => {
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
+        tree.insert(newNode);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTLR.join(''));
       });
@@ -135,12 +167,12 @@ describe('Creating', () => {
       it('and left\'s right subtree is longer - tree must rotate to left-right (stack insert)', () => {
 
         accumulator = '';
-        const {tree, treeInitialNodes, newNode} = factory.createRotateToLeftRight(false);
+        const {tree, treeInitialNodes, newNode} = factory.createRotateToLeftRight(true);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
+        tree.insert(newNode);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTLR.join(''));
       });
@@ -157,20 +189,21 @@ describe('Creating', () => {
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
+        tree.insert(newNode);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTL.join(''));
       });
 
+
       it('and right\'s right subtree is longer - tree must rotate to left (stack insert)', () => {
 
         accumulator = '';
-        const {tree, treeInitialNodes, newNode} = factory.createRotateToLeft(false);
+        const {tree, treeInitialNodes, newNode} = factory.createRotateToLeft(true);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
+        tree.insert(newNode);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTL.join(''));
       });
@@ -183,7 +216,7 @@ describe('Creating', () => {
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
+        tree.insert(newNode);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTRL.join(''));
       });
@@ -191,155 +224,18 @@ describe('Creating', () => {
       it('and right\'s left subtree is longer - tree must rotate to right-left (stack insert)', () => {
 
         accumulator = '';
-        const {tree, treeInitialNodes, newNode} = factory.createRotateToRightLeft(false);
+        const {tree, treeInitialNodes, newNode} = factory.createRotateToRightLeft(true);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(treeInitialNodes.join(''));
 
         accumulator = '';
-        tree.insertRecursive(newNode);
+        tree.insert(newNode);
         tree.traverseBFS(traverseFn);
         expect(accumulator).toEqual(factory.balancedAfterRTRL.join(''));
       });
 
     });
 
-  });
-
-
-  it('test', () => {
-    let arr = [
-      1,
-      5,
-      8,
-      11,
-      22,
-      67,
-      4,
-      100,
-      51,
-      24,
-      15,
-      63,
-      33,
-      12,
-      853,
-      654,
-      21,
-      54,
-      84,
-      23,
-      44,
-      9,
-      35,
-      9,
-      342,
-      7,
-      2,
-      79,
-      457,
-      3,
-      42,
-      8,
-      3,
-      1,
-      0,
-      5,
-      96,
-      36,
-      4,
-      7,
-      4,
-      74,
-      6,
-      3,
-      67,
-      96,
-      3,
-      4,
-      647,
-      74,
-      3,
-      5,
-      74,
-      3,
-      4,
-      745,
-      7,
-      3,
-      43,
-      74,
-      5,
-      3,
-      96,
-      3,
-      534,
-      75,
-      3,
-      74,
-      84,
-      5,
-      457,
-      75,
-      3,
-      6,
-      2,
-      8,
-      5,
-      345,
-      3,
-      7,
-      3,
-      43,
-      7,
-      34,
-      978,
-      5,
-      4,
-      756,
-      85,
-      957,
-      34,
-      63,
-      7,
-      0,
-      34,
-      574,
-      7,
-      4,
-      76,
-    ];
-    arr = [
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-      ...arr,
-    ];
-    arr = [...arr, ...arr, ...arr, ...arr, ...arr, ...arr, ...arr];
-    arr = [...arr, ...arr, ...arr, ...arr, ...arr, ...arr, ...arr];
-    arr = [...arr, ...arr, ...arr, ...arr, ...arr, ...arr, ...arr];
-    arr = [...arr, ...arr, ...arr, ...arr, ...arr, ...arr, ...arr];
-    arr = [...arr, ...arr, ...arr, ...arr, ...arr, ...arr, ...arr];
-    const date1 = new Date();
-    const rTree = new AvlTree(factory.compareFn);
-    rTree.insertRecursive(arr);
-    console.log(new Date().getTime() - date1.getTime());
-
-    const date2 = new Date();
-    const sTree = new AvlTree(factory.compareFn);
-    sTree.insertUsingStack(arr);
-    console.log(new Date().getTime() - date2.getTime());
   });
 
 });

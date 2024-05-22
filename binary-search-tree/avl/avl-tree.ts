@@ -3,6 +3,25 @@ import {Node} from './node';
 
 type CompareFn<T> = (newValue: T, nodeValue: T) => number;
 
+interface IAvlTree<T> {
+
+  insert(values: T | [T]): void;
+
+  traverseDFS(traverseFn: TraverseFn<T>, type?: DFS_TYPES): void;
+
+  traverseBFS(traverseFn: TraverseFn<T>): void;
+
+  find(value: T): T;
+
+  findAll(value: T): T[];
+
+  getMin(): T;
+
+  getMax(): T;
+
+  delete(value: T): void;
+}
+
 type TraverseFn<T> = (nodeValue: T) => void;
 
 enum DFS_TYPES {
@@ -12,14 +31,16 @@ enum DFS_TYPES {
 }
 
 type Options = {
-  ignoreDuplicates?: boolean
+  ignoreDuplicates?: boolean,
+  useStackInsteadRecursion?: boolean,
 }
 
 const DEFAULT_OPTIONS: Options = {
   ignoreDuplicates: true,
+  useStackInsteadRecursion: false,
 };
 
-export class AvlTree<T> {
+export class AvlTree<T> implements IAvlTree<T> {
 
   private root: Node<T> | null;
   private readonly options: Options;
@@ -30,6 +51,8 @@ export class AvlTree<T> {
    * value, zero if equal, a positive number if new value is greater than node value
    * @param [options] - optional settings
    * @param {boolean} [options.ignoreDuplicates=true] - if true does not insert duplicate values
+   * @param {boolean} [options.useStackInsteadRecursion=false] - if true uses stack when insert values or traverse tree. Used if
+   * a call stack overflow error occurs
    */
   constructor(compareFn: CompareFn<T>, options?: Options) {
     this.compareFn = compareFn;
@@ -37,10 +60,13 @@ export class AvlTree<T> {
     this.options = {...DEFAULT_OPTIONS, ...options};
   }
 
-  public insertRecursive(values: T | T[]) {
+  public insert(values: T | T[]) {
     const _values = Array.isArray(values) ? values : [values];
-
-    _values.forEach(value => this.root = this.insertValueRecursive(value, this.root));
+    if (this.options.useStackInsteadRecursion) {
+      _values.forEach(value => this.insertValueUsingStack(value));
+    } else {
+      _values.forEach(value => this.root = this.insertValueRecursive(value, this.root));
+    }
   }
 
   private insertValueRecursive(value: T, toNode: Node<T> | null): Node<T> {
@@ -62,20 +88,16 @@ export class AvlTree<T> {
     return this.getBalancedRootOfSubtree(toNode);
   }
 
-  public insertUsingStack(values: T | T[]) {
-    const _values = Array.isArray(values) ? values : [values];
-
-    _values.forEach(value => this.insertValueUsingStack(value));
-  }
-
   private insertValueUsingStack(value: T): void {
+
+    type Stack = { direction: keyof Pick<Node<T>, 'left' | 'right'>, node: Node<T> };
 
     if (!this.root) {
       this.root = new Node(value);
       return;
     }
 
-    const stack: { direction: 'left' | 'right', node: Node<T> }[] = [];
+    const stack: Stack[] = [];
     let curNode: Node<T> | null = this.root;
     while (curNode) {
       const compareResult = this.compareFn(value, curNode.value);
@@ -92,9 +114,10 @@ export class AvlTree<T> {
 
     let newNode = new Node(value);
     while (stack.length) {
-      const {node, direction} = stack.pop() as { direction: 'left' | 'right', node: Node<T> };
+      const {node, direction} = stack.pop() as Stack;
       node[direction] = newNode;
       node.updateHeight();
+      //todo complete bug
       newNode = this.getBalancedRootOfSubtree(node);
     }
   }
@@ -159,40 +182,114 @@ export class AvlTree<T> {
   public traverseDFS(traverseFn: TraverseFn<T>, type?: DFS_TYPES): void {
     switch (type) {
       case DFS_TYPES.PRE_ORDER:
-        return this.dfsPreOrder(this.root, traverseFn);
+        if (this.options.useStackInsteadRecursion) {
+          return this.dfsPreOrderUsingStack(traverseFn);
+        }
+        return this.dfsPreOrderRecursive(this.root, traverseFn);
       case DFS_TYPES.POST_ORDER:
-        return this.dfsPostOrder(this.root, traverseFn);
+        if (this.options.useStackInsteadRecursion) {
+          return this.dfsPostOrderUsingStack(traverseFn);
+        }
+        return this.dfsPostOrderRecursive(this.root, traverseFn);
       case DFS_TYPES.IN_ORDER:
       default:
-        return this.dfsInOrder(this.root, traverseFn);
+        if (this.options.useStackInsteadRecursion) {
+          return this.dfsInOrderUsingStack(traverseFn);
+        }
+        return this.dfsInOrderRecursive(this.root, traverseFn);
     }
   }
 
-  private dfsPreOrder(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
+  private dfsPreOrderRecursive(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
     if (!node) {
       return;
     }
     traverseFn(node.value);
-    this.dfsPreOrder(node.left, traverseFn);
-    this.dfsPreOrder(node.right, traverseFn);
+    this.dfsPreOrderRecursive(node.left, traverseFn);
+    this.dfsPreOrderRecursive(node.right, traverseFn);
   }
 
-  private dfsInOrder(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
+  private dfsPreOrderUsingStack(traverseFn: TraverseFn<T>): void {
+
+    if (!this.root) {
+      return;
+    }
+
+    const stack = [this.root];
+    while (stack.length) {
+      const node = stack.pop() as Node<T>;
+      traverseFn(node.value);
+      if (node.right) {
+        stack.push(node.right);
+      }
+      if (node.left) {
+        stack.push(node.left);
+      }
+    }
+  }
+
+  private dfsInOrderRecursive(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
     if (!node) {
       return;
     }
-    this.dfsInOrder(node.left, traverseFn);
+    this.dfsInOrderRecursive(node.left, traverseFn);
     traverseFn(node.value);
-    this.dfsInOrder(node.right, traverseFn);
+    this.dfsInOrderRecursive(node.right, traverseFn);
   }
 
-  private dfsPostOrder(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
+  private dfsInOrderUsingStack(traverseFn: TraverseFn<T>): void {
+
+    if (!this.root) {
+      return;
+    }
+
+    const stack: Node<T>[] = [];
+    let currentNode: Node<T> | null = this.root;
+    while (stack.length || currentNode) {
+
+      while (currentNode) {
+        stack.push(currentNode);
+        currentNode = currentNode.left;
+      }
+
+      currentNode = stack.pop() as Node<T>;
+      traverseFn(currentNode.value);
+      currentNode = currentNode.right;
+    }
+  }
+
+  private dfsPostOrderRecursive(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
     if (!node) {
       return;
     }
-    this.dfsPostOrder(node.left, traverseFn);
-    this.dfsPostOrder(node.right, traverseFn);
+    this.dfsPostOrderRecursive(node.left, traverseFn);
+    this.dfsPostOrderRecursive(node.right, traverseFn);
     traverseFn(node.value);
+  }
+
+  private dfsPostOrderUsingStack(traverseFn: TraverseFn<T>): void {
+
+    if (!this.root) {
+      return;
+    }
+
+    const stack: Node<T>[] = [this.root];
+    const postStack: Node<T>[] = [];
+
+    while (stack.length) {
+      const node = stack.pop() as Node<T>;
+      if (node.left) {
+        stack.push(node.left);
+      }
+      if (node.right) {
+        stack.push(node.right);
+      }
+      postStack.push(node);
+    }
+
+    while (postStack.length) {
+      traverseFn((postStack.pop() as Node<T>).value);
+    }
   }
 
   public traverseBFS(traverseFn: TraverseFn<T>): void {
@@ -214,5 +311,6 @@ export class AvlTree<T> {
       }
     }
   }
+
 
 }
