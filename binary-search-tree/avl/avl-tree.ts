@@ -1,8 +1,8 @@
-import {CompareFn, DFS_TYPES, IAvlTree, TraverseFn} from './avl-tree.interface';
+import {CompareFn, DFS_TYPES, TraverseFn} from './avl-tree.interface';
 import {Node} from './node';
 
 
-export abstract class Tree<T> implements IAvlTree<T>{
+export abstract class Tree<T>{
 
   protected root: Node<T> | null;
   protected readonly ignoreDuplicates: boolean;

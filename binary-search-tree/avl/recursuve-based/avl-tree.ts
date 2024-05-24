@@ -82,7 +82,7 @@ export class AvlTree<T> extends Tree<T> {
   }
 
 
-  private deleteNode(value: T, fromNode: Node<T>): Node<T> | null {
+  private deleteNode(value: T, fromNode: Node<T> | null): Node<T> | null {
 
     if (!fromNode) {
       return null;
@@ -91,13 +91,38 @@ export class AvlTree<T> extends Tree<T> {
     const compareResult = this.compareFn(value, fromNode.value);
 
     if (compareResult === 0) {
+      if (fromNode.left !== null && fromNode.right !== null) {
+        return null;
+      }
+
+
+      if ((root.left === null) || (root.right === null)) {
+        let temp = null;
+        if (temp == root.left){
+          temp = root.right;
+        }else{
+          temp = root.left;
+        }
+
+        if (temp == null) {
+          temp = root;
+          root = null;
+        } else{
+          root = temp;
+        }
+      } else {
+        let temp = this.nodeWithMimumValue(root.right);
+        root.item = temp.item;
+        root.right = deleteNodeHelper(root.right, temp.item);
+      }
+
+
 
     } else if (compareResult < 0) {
-      fromNode.left = this.deleteNode(value, fromNode);
+      fromNode.left = this.deleteNode(value, fromNode.left);
     } else {
-      fromNode.left = this.deleteNode(value, fromNode);
+      fromNode.right = this.deleteNode(value, fromNode.right);
     }
-
 
     return {} as Node<T>;
   }
