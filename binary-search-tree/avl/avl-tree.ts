@@ -1,4 +1,4 @@
-import {CompareFn, DFS_TYPES, IAvlTree, TraverseFn} from './avl-tree.interface';
+import {CompareFn, DFS_TYPES, IAvlTree, PrintFn, TraverseFn} from './avl-tree.interface';
 import {Node} from './node';
 
 
@@ -101,26 +101,9 @@ export abstract class Tree<T> implements IAvlTree<T> {
 
   public abstract delete(value: T): void;
 
-  public find(value: T): T[] {
+  public abstract find(value: T): T[];
 
-    const results: T[] = [];
-    let currentNode = this.root;
-    while (currentNode) {
-      const compareResult = this.compareFn(value, currentNode.value);
-      if (compareResult === 0) {
-        results.push(currentNode.value);
-        if (this.ignoreDuplicates) {
-          return results;
-        }
-        //todo !ignoreDuplicates
-      } else if (compareResult < 0) {
-        currentNode = currentNode.getLeft();
-      } else {
-        currentNode = currentNode.getRight();
-      }
-    }
-    return results;
-  }
+  public abstract includes(value: T): boolean;
 
   public getMin(): T | null {
     if (!this.root) {
@@ -133,10 +116,7 @@ export abstract class Tree<T> implements IAvlTree<T> {
   protected getMinInNode(node: Node<T>): Node<T> {
 
     let left = node.getLeft();
-    while (left) {
-      left = node.getLeft();
-    }
-    return node;
+    return left ? this.getMinInNode(left) : node;
   }
 
   public getMax(): T | null {
@@ -150,9 +130,39 @@ export abstract class Tree<T> implements IAvlTree<T> {
   protected getMaxInNode(node: Node<T>): Node<T> {
 
     let right = node.getRight();
-    while (right) {
-      right = node.getRight();
+    return right ? this.getMaxInNode(right) : node;
+  }
+
+  public getMaxHeight(): number {
+    return this.root ? this.root.getHeight() : 0;
+  }
+
+  public isEmpty(): boolean {
+    return this.getMaxHeight() === 0;
+  }
+
+  public print(printFn: PrintFn<T>): void {
+
+    if (!this.root) {
+      return;
     }
-    return node;
+    type N = { node: Node<T>, direction: '' | '<-' | '->', from: string | null };
+    const queue: N[] = [{node: this.root, direction: '', from: null}];
+
+    console.log('');
+    while (queue.length) {
+
+      const node = queue.shift() as N;
+      process.stdout.write(`${node.from ? node.from : ''}${node.direction}${printFn(node.node.value)}  `);
+      const left = node.node.getLeft();
+      if (left) {
+        queue.push({node: left, direction: '<-', from: printFn(node.node.value)});
+      }
+      const right = node.node.getRight();
+      if (right) {
+        queue.push({node: right, direction: '->', from: printFn(node.node.value)});
+      }
+    }
+
   }
 }

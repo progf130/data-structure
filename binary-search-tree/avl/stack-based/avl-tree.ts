@@ -16,7 +16,7 @@ export class AvlTree<T> extends Tree<T> {
 
   private insertValue(value: T): void {
 
-    type Stack = { direction: keyof Pick<Node<T>, 'left' | 'right'>, node: Node<T> };
+    type Stack = { direction: keyof Pick<Node<T>, 'setLeft' | 'setRight'>, node: Node<T> };
 
     if (!this.root) {
       this.root = new Node(value);
@@ -30,18 +30,18 @@ export class AvlTree<T> extends Tree<T> {
       if (this.ignoreDuplicates && compareResult === 0) {
         return;
       } else if (compareResult < 0) {
-        stack.push({direction: 'left', node: curNode});
-        curNode = curNode.left;
+        stack.push({direction: 'setLeft', node: curNode});
+        curNode = curNode.getLeft();
       } else {
-        stack.push({direction: 'right', node: curNode});
-        curNode = curNode.right;
+        stack.push({direction: 'setRight', node: curNode});
+        curNode = curNode.getRight();
       }
     }
 
     let newNode = new Node(value);
     while (stack.length) {
       const {node, direction} = stack.pop() as Stack;
-      node[direction] = newNode;
+      node[direction](newNode);
       node.updateHeight();
       //todo complete bug
       newNode = this.getBalancedRootOfSubtree(node);
@@ -70,11 +70,14 @@ export class AvlTree<T> extends Tree<T> {
     while (stack.length) {
       const node = stack.pop() as Node<T>;
       traverseFn(node.value);
-      if (node.right) {
-        stack.push(node.right);
+      const left = node.getLeft();
+      const right = node.getRight();
+
+      if (right) {
+        stack.push(right);
       }
-      if (node.left) {
-        stack.push(node.left);
+      if (left) {
+        stack.push(left);
       }
     }
   }
@@ -91,12 +94,12 @@ export class AvlTree<T> extends Tree<T> {
 
       while (currentNode) {
         stack.push(currentNode);
-        currentNode = currentNode.left;
+        currentNode = currentNode.getLeft();
       }
 
       currentNode = stack.pop() as Node<T>;
       traverseFn(currentNode.value);
-      currentNode = currentNode.right;
+      currentNode = currentNode.getRight();
     }
   }
 
@@ -111,11 +114,16 @@ export class AvlTree<T> extends Tree<T> {
 
     while (stack.length) {
       const node = stack.pop() as Node<T>;
-      if (node.left) {
-        stack.push(node.left);
+
+      const left = node.getLeft();
+      const right = node.getRight();
+
+
+      if (left) {
+        stack.push(left);
       }
-      if (node.right) {
-        stack.push(node.right);
+      if (right) {
+        stack.push(right);
       }
       postStack.push(node);
     }
@@ -125,7 +133,16 @@ export class AvlTree<T> extends Tree<T> {
     }
   }
 
-  public override delete(value: T) {
+  public delete(value: T) {
+    throw new Error('Method not implemented.');
+  }
+
+  public find(value: T): T[] {
+    throw new Error('Method not implemented.');
+  }
+
+  public includes(value: T): boolean {
+    throw new Error('Method not implemented.');
   }
 
 }

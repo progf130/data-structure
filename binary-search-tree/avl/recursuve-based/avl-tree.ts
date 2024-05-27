@@ -21,9 +21,13 @@ export class AvlTree<T> extends Tree<T> {
     }
 
     const compareResult = this.compareFn(value, toNode.value);
-    if (this.ignoreDuplicates && compareResult === 0) {
+    if (compareResult < 0) {
+      toNode.setLeft(this.insertValue(value, toNode.getLeft()));
+    } else if (compareResult > 0) {
+      toNode.setRight(this.insertValue(value, toNode.getRight()));
+    } else if (this.ignoreDuplicates) {
       return toNode;
-    } else if (compareResult < 0) {
+    } else if (this.getBalanceFactor(toNode) < 0) {
       toNode.setLeft(this.insertValue(value, toNode.getLeft()));
     } else {
       toNode.setRight(this.insertValue(value, toNode.getRight()));
@@ -31,6 +35,93 @@ export class AvlTree<T> extends Tree<T> {
 
     toNode.updateHeight();
     return this.getBalancedRootOfSubtree(toNode);
+  }
+
+  public delete(value: T): void {
+
+    if (!this.root) {
+      return;
+    }
+
+    this.root = this.deleteNode(value, this.root);
+  }
+
+
+  private deleteNode(value: T, fromNode: Node<T> | null, ignoreDuplicates = this.ignoreDuplicates): Node<T> | null {
+
+    if (!fromNode) {
+      return null;
+    }
+
+    const left = fromNode.getLeft();
+    const right = fromNode.getRight();
+    const compareResult = this.compareFn(value, fromNode.value);
+
+    if (compareResult === 0) {
+      if (!ignoreDuplicates) {
+        this.deleteDuplicates(value, fromNode);
+      }
+      if (left !== null && right !== null) {
+        const rightMinNode = this.getMinInNode(right);
+        fromNode.value = rightMinNode.value;
+        //todo Неправильно т.к. мы устанавливаем правым сразу минимальный, а он может идти через несколько уровней.
+        fromNode.setRight(this.deleteNode(rightMinNode.value, rightMinNode, true));
+        return rightMinNode;
+      } else if (left === null) {
+        fromNode = right;
+        // fromNode.setRight(right);
+      } else {
+        fromNode = left;
+        // fromNode.setRight(left);
+      }
+    } else if (compareResult < 0) {
+      fromNode.setLeft(this.deleteNode(value, left));
+    } else {
+      fromNode.setRight(this.deleteNode(value, right));
+    }
+    if (fromNode) {
+      fromNode.updateHeight();
+      return this.getBalancedRootOfSubtree(fromNode);
+    }
+    return fromNode;
+  }
+
+  private deleteDuplicates(value: T, fromNode: Node<T>): void {
+    const left = fromNode.getLeft();
+    const right = fromNode.getRight();
+    if (left !== null && this.compareFn(value, left.value) === 0) {
+      fromNode.setLeft(this.deleteNode(value, left));
+    }
+    if (right !== null && this.compareFn(value, right.value) === 0) {
+      fromNode.setRight(this.deleteNode(value, right));
+    }
+  }
+
+  public find(value: T): T[] {
+    const results: T[] = [];
+    this.findInNode(value, this.root, results, this.ignoreDuplicates);
+    return results;
+  }
+
+  private findInNode(value: T, inNode: Node<T> | null, results: T[], firstOne: boolean): void {
+
+    if (!inNode) {
+      return;
+    }
+
+    const compareResult = this.compareFn(value, inNode.value);
+    if (compareResult === 0) {
+      results.push(inNode.value);
+      if (firstOne) {
+        return;
+      }
+      this.findInNode(value, inNode.getLeft(), results, firstOne);
+      this.findInNode(value, inNode.getRight(), results, firstOne);
+    } else if (compareResult < 0) {
+      this.findInNode(value, inNode.getLeft(), results, firstOne);
+    } else {
+      this.findInNode(value, inNode.getRight(), results, firstOne);
+    }
   }
 
   public traverseDFS(traverseFn: TraverseFn<T>, type?: DFS_TYPES): void {
@@ -72,64 +163,10 @@ export class AvlTree<T> extends Tree<T> {
     traverseFn(node.value);
   }
 
-  public delete(value: T): void {
-
-    if (!this.root) {
-      return;
-    }
-
-    this.root = this.deleteNode(value, this.root);
-  }
-
-
-  private deleteNode(value: T, fromNode: Node<T> | null): Node<T> | null {
-
-    if (!fromNode) {
-      return null;
-    }
-
-    const left = fromNode.getLeft();
-    const right = fromNode.getRight();
-
-    const compareResult = this.compareFn(value, fromNode.value);
-
-    if (compareResult === 0) {
-      if (left !== null && right !== null) {
-        const rightMinNode = this.getMinInNode(left);
-        const parent = rightMinNode.getParent() as Node<T>;
-
-        return rightMinNode;
-      }
-
-
-      if ((root.left === null) || (root.right === null)) {
-        let temp = null;
-        if (temp == root.left) {
-          temp = root.right;
-        } else {
-          temp = root.left;
-        }
-
-        if (temp == null) {
-          temp = root;
-          root = null;
-        } else {
-          root = temp;
-        }
-      } else {
-        let temp = this.nodeWithMimumValue(root.right);
-        root.item = temp.item;
-        root.right = deleteNodeHelper(root.right, temp.item);
-      }
-
-
-    } else if (compareResult < 0) {
-      fromNode.setLeft(this.deleteNode(value, left));
-    } else {
-      fromNode.setRight(this.deleteNode(value, right));
-    }
-
-    return {} as Node<T>;
+  public includes(value: T): boolean {
+    const results: T[] = [];
+    this.findInNode(value, this.root, results, true);
+    return results.length > 0;
   }
 
 }

@@ -12,10 +12,19 @@ export interface IAvlTree<T> {
   getMax(): T | null;
 
   delete(value: T): void;
+
+  includes(value: T): boolean;
+
+  isEmpty(): boolean;
+
+  getMaxHeight(): number;
+
+  print(printFn: PrintFn<T>): void;
 }
 
 export type CompareFn<T> = (newValue: T, nodeValue: T) => number;
 export type TraverseFn<T> = (nodeValue: T) => void;
+export type PrintFn<T> = (nodeValue: T) => string;
 
 export enum DFS_TYPES {
   PRE_ORDER = 'PRE_ORDER',
