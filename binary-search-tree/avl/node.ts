@@ -1,7 +1,8 @@
 export class Node<T> {
   public value: T;
-  public left: Node<T> | null;
-  public right: Node<T> | null;
+  private left: Node<T> | null;
+  private right: Node<T> | null;
+  private parent: Node<T> | null;
   // height of subgraph with this node as a root
   private height: number;
 
@@ -10,7 +11,34 @@ export class Node<T> {
     this.value = value;
     this.left = null;
     this.right = null;
+    this.parent = null;
     this.height = 1;
+  }
+
+  getLeft(): Node<T> | null {
+    return this.left;
+  }
+
+  setLeft(node: Node<T> | null): void {
+    if (node) {
+      node.parent = this;
+    }
+    this.left = node;
+  }
+
+  getRight(): Node<T> | null {
+    return this.right;
+  }
+
+  setRight(node: Node<T> | null): void {
+    if (node) {
+      node.parent = this;
+    }
+    this.right = node;
+  }
+
+  getParent(): Node<T> | null {
+    return this.parent;
   }
 
   public getHeight(): number {

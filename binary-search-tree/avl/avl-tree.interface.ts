@@ -1,12 +1,16 @@
 export interface IAvlTree<T> {
+  insert(values: T | T[]): void;
 
-  insert(values: T | [T]): void;
+  find(value: T): T[];
+
   traverseDFS(traverseFn: TraverseFn<T>, type?: DFS_TYPES): void;
+
   traverseBFS(traverseFn: TraverseFn<T>): void;
-  find(value: T): T;
-  findAll(value: T): T[];
-  getMin(): T;
-  getMax(): T;
+
+  getMin(): T | null;
+
+  getMax(): T | null;
+
   delete(value: T): void;
 }
 

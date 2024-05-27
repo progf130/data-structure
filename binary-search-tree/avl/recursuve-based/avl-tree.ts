@@ -24,9 +24,9 @@ export class AvlTree<T> extends Tree<T> {
     if (this.ignoreDuplicates && compareResult === 0) {
       return toNode;
     } else if (compareResult < 0) {
-      toNode.left = this.insertValue(value, toNode.left);
+      toNode.setLeft(this.insertValue(value, toNode.getLeft()));
     } else {
-      toNode.right = this.insertValue(value, toNode.right);
+      toNode.setRight(this.insertValue(value, toNode.getRight()));
     }
 
     toNode.updateHeight();
@@ -50,25 +50,25 @@ export class AvlTree<T> extends Tree<T> {
       return;
     }
     traverseFn(node.value);
-    this.dfsPreOrder(node.left, traverseFn);
-    this.dfsPreOrder(node.right, traverseFn);
+    this.dfsPreOrder(node.getLeft(), traverseFn);
+    this.dfsPreOrder(node.getRight(), traverseFn);
   }
 
   private dfsInOrder(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
     if (!node) {
       return;
     }
-    this.dfsInOrder(node.left, traverseFn);
+    this.dfsInOrder(node.getLeft(), traverseFn);
     traverseFn(node.value);
-    this.dfsInOrder(node.right, traverseFn);
+    this.dfsInOrder(node.getRight(), traverseFn);
   }
 
   private dfsPost(node: Node<T> | null, traverseFn: TraverseFn<T>): void {
     if (!node) {
       return;
     }
-    this.dfsPost(node.left, traverseFn);
-    this.dfsPost(node.right, traverseFn);
+    this.dfsPost(node.getLeft(), traverseFn);
+    this.dfsPost(node.getRight(), traverseFn);
     traverseFn(node.value);
   }
 
@@ -88,26 +88,32 @@ export class AvlTree<T> extends Tree<T> {
       return null;
     }
 
+    const left = fromNode.getLeft();
+    const right = fromNode.getRight();
+
     const compareResult = this.compareFn(value, fromNode.value);
 
     if (compareResult === 0) {
-      if (fromNode.left !== null && fromNode.right !== null) {
-        return null;
+      if (left !== null && right !== null) {
+        const rightMinNode = this.getMinInNode(left);
+        const parent = rightMinNode.getParent() as Node<T>;
+
+        return rightMinNode;
       }
 
 
       if ((root.left === null) || (root.right === null)) {
         let temp = null;
-        if (temp == root.left){
+        if (temp == root.left) {
           temp = root.right;
-        }else{
+        } else {
           temp = root.left;
         }
 
         if (temp == null) {
           temp = root;
           root = null;
-        } else{
+        } else {
           root = temp;
         }
       } else {
@@ -117,11 +123,10 @@ export class AvlTree<T> extends Tree<T> {
       }
 
 
-
     } else if (compareResult < 0) {
-      fromNode.left = this.deleteNode(value, fromNode.left);
+      fromNode.setLeft(this.deleteNode(value, left));
     } else {
-      fromNode.right = this.deleteNode(value, fromNode.right);
+      fromNode.setRight(this.deleteNode(value, right));
     }
 
     return {} as Node<T>;
