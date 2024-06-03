@@ -1,4 +1,4 @@
-export interface IAvlTree<T> {
+export interface Tree<T> {
   insert(values: T | T[]): void;
 
   find(value: T): T[];

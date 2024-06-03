@@ -1,6 +1,5 @@
-import {AvlTree as AvlRecursive} from '../recursuve-based/avl-tree';
-import {AvlTree as AvlStack} from '../stack-based/avl-tree';
-import {IAvlTree} from '../avl-tree.interface';
+import {AvlTree} from '../avl-tree';
+import {Tree} from '../../tree';
 
 
 export type NodeObj = {
@@ -32,32 +31,22 @@ export const factory = {
     rtrlAfterBalancing: [7, 5, 8, 4, 6, 9],
     deleting: [],
   },
-  create: (values: number[], type: 'stack' | 'recursive', ignoreDuplicates = true): IAvlTree<NodeObj> => {
-    let tree: IAvlTree<NodeObj>;
-    if (type === 'recursive') {
-      tree = new AvlRecursive(factory.compareObjFn, ignoreDuplicates);
-      tree.insert(factory.wrapToArrayOfObject(values));
-    } else {
-      tree = new AvlStack(factory.compareObjFn, ignoreDuplicates);
-      tree.insert(factory.wrapToArrayOfObject(values));
-    }
+  create: (values: number[], ignoreDuplicates = true): Tree<NodeObj> => {
+    let tree: Tree<NodeObj>;
+    tree = new AvlTree(factory.compareObjFn, ignoreDuplicates);
+    tree.insert(factory.wrapToArrayOfObject(values));
     return tree;
   },
-  createForInserting(values: number[], type: 'stack' | 'recursive'): {
-    tree: IAvlTree<NodeObj>,
+  createForInserting(values: number[]): {
+    tree: Tree<NodeObj>,
     treeInitialNodes: number[],
     newNodeVal: number
   } {
     const treeInitialNodes = [...values];
     const newNodeVal = treeInitialNodes.pop() as number;
-    let tree: IAvlTree<NodeObj>;
-    if (type === 'recursive') {
-      tree = new AvlRecursive(factory.compareObjFn);
-      tree.insert(factory.wrapToArrayOfObject(treeInitialNodes));
-    } else {
-      tree = new AvlStack(factory.compareObjFn);
-      tree.insert(factory.wrapToArrayOfObject(treeInitialNodes));
-    }
+    let tree: Tree<NodeObj>;
+    tree = new AvlTree(factory.compareObjFn);
+    tree.insert(factory.wrapToArrayOfObject(treeInitialNodes));
     return {
       tree,
       treeInitialNodes,
